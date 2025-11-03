@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>FCE Performance Analytics Dashboard - Complete Cohort</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      margin: 0;
+      background: #0d0d0d;
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      color: #fff;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    .background {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: radial-gradient(circle at 30% 20%, rgba(201, 169, 97, 0.08) 0%, transparent 50%),
+                  radial-gradient(circle at 70% 80%, rgba(201, 169, 97, 0.06) 0%, transparent 45%),
+                  #0d0d0d;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 1400px;
+      width: 100%;
+      position: relative;
+      z-index: 1;
+      margin: 0 auto;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    
+    header h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #C9A961;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.04em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #C9A961 0%, rgba(201, 169, 97, 0.8) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .subtitle {
+      font-size: 0.8125rem;
+      color: #8e8e93;
+      margin-bottom: 0.375rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    
+    .author {
+      font-size: 0.6875rem;
+      color: #636366;
+      font-weight: 400;
+      letter-spacing: 0.02em;
+    }
+
+    .summary-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 3rem;
+    }
+
+    .summary-card {
+      background: rgba(28, 28, 30, 0.85);
+      backdrop-filter: blur(40px) saturate(150%);
+      -webkit-backdrop-filter: blur(40px) saturate(150%);
+      padding: 1.5rem;
+      border-radius: 1rem;
+      border: 1.5px solid rgba(201, 169, 97, 0.25);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      text-align: center;
+    }
+
+    .summary-label {
+      font-size: 0.75rem;
+      color: #8e8e93;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+
+    .summary-value {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #C9A961 0%, rgba(201, 169, 97, 0.8) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .summary-subtext {
+      font-size: 0.7rem;
+      color: #636366;
+      margin-top: 0.25rem;
+    }
+    
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2rem;
+      margin-bottom: 5rem;
+      clear: both;
+    }
+    
+    .card-wrapper {
+      perspective: 1500px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .card {
+      width: 100%;
+      min-height: 450px;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+    
+    .card.flipped {
+      transform: rotateY(180deg);
+    }
+    
+    .card-face {
+      width: 100%;
+      min-height: 450px;
+      position: absolute;
+      top: 0;
+      left: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      background: rgba(28, 28, 30, 0.98);
+      backdrop-filter: blur(40px) saturate(150%);
+      -webkit-backdrop-filter: blur(40px) saturate(150%);
+      border: 1.5px solid rgba(201, 169, 97, 0.25);
+      border-radius: 1.5rem;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    }
+    
+    .card-front {
+      z-index: 2;
+      transform: rotateY(0deg);
+    }
+    
+    .card-back {
+      transform: rotateY(180deg);
+      z-index: 1;
+    }
+    
+    .card-header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .card-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    .card-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #e5e5e7;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.02em;
+    }
+    
+    .card-subtitle {
+      font-size: 0.75rem;
+      color: #8e8e93;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+
+    .card-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-item {
+      background: rgba(201, 169, 97, 0.08);
+      border: 1px solid rgba(201, 169, 97, 0.2);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #C9A961;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      color: #8e8e93;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .chart-container {
+      width: 100%;
+      height: 300px;
+      position: relative;
+    }
+
+    .card-hint {
+      font-size: 0.75rem;
+      color: #8e8e93;
+      text-align: center;
+      margin-top: 1rem;
+      padding: 0.75rem;
+      background: rgba(201, 169, 97, 0.08);
+      border-radius: 0.75rem;
+      border: 1px solid rgba(201, 169, 97, 0.2);
+    }
+
+    .action-buttons {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .action-btn {
+      padding: 0.75rem 1rem;
+      border: none;
+      border-radius: 0.75rem;
+      font-weight: 600;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      font-family: 'DM Sans', sans-serif;
+      background: rgba(201, 169, 97, 0.15);
+      border: 1px solid rgba(201, 169, 97, 0.3);
+      color: #C9A961;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .action-btn:hover {
+      background: rgba(201, 169, 97, 0.25);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(201, 169, 97, 0.3);
+    }
+
+    .toggle-summary-btn {
+      background: rgba(201, 169, 97, 0.15);
+      border: 1px solid rgba(201, 169, 97, 0.3);
+      color: #C9A961;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      font-size: 0.75rem;
+      transition: all 0.3s;
+    }
+
+    .toggle-summary-btn:hover {
+      background: rgba(201, 169, 97, 0.25);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(201, 169, 97, 0.3);
+    }
+
+    .detail-panel {
+      display: none;
+      margin-top: 1.5rem;
+      padding: 1.5rem;
+      background: rgba(201, 169, 97, 0.08);
+      border: 1px solid rgba(201, 169, 97, 0.2);
+      border-radius: 0.75rem;
+      animation: slideIn 0.3s ease;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    .detail-panel.active {
+      display: block;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .detail-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #C9A961;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .detail-list {
+      list-style: none;
+      font-size: 0.8rem;
+      line-height: 1.6;
+      color: #e5e5e7;
+    }
+
+    .detail-list li {
+      padding: 0.4rem 0;
+      border-bottom: 1px solid rgba(201, 169, 97, 0.15);
+    }
+
+    .detail-list li:last-child {
+      border-bottom: none;
+    }
+
+    .detail-list strong {
+      color: #C9A961;
+    }
+
+    .insight-box {
+      background: rgba(201, 169, 97, 0.06);
+      border-left: 3px solid #C9A961;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #e5e5e7;
+      margin-top: 1rem;
+    }
+
+    @media (max-width: 1024px) {
+      .cards-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      header h1 {
+        font-size: 2rem;
+      }
+
+      .summary-bar {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .card-face {
+        min-height: 400px;
+        padding: 1.5rem;
+      }
+
+      .action-buttons {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="background"></div>
+  
+  <div class="container">
+    <header>
+      <h1>ANALYTICS</h1>
+      <p class="subtitle">FCE Performance Dashboard · Complete Cohort Analysis</p>
+      <p class="author">Centre PT003 · Porto 4000-455 · Sessions: 14 & 28 June 2025</p>
+    </header>
+
+    <div class="summary-bar">
+      <div class="summary-card">
+        <div class="summary-label">Total Students</div>
+        <div class="summary-value">51</div>
+        <div class="summary-subtext">100% Pass Rate</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Average Score</div>
+        <div class="summary-value">175.2</div>
+        <div class="summary-subtext">Solid Grade B Performance</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Grade A (C1)</div>
+        <div class="summary-value">8</div>
+        <div class="summary-subtext">15.7% of cohort</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Grade B (B2+)</div>
+        <div class="summary-value">27</div>
+        <div class="summary-subtext">52.9% of cohort</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Grade C (B2)</div>
+        <div class="summary-value">16</div>
+        <div class="summary-subtext">31.4% of cohort</div>
+      </div>
+    </div>
+    
+    <div class="cards-grid">
+      <!-- Card 1: Overall Performance -->
+      <div class="card-wrapper">
+        <div class="card" id="card1" onclick="flipCard('card1')">
+          <div class="card-face card-front">
+            <div class="card-header">
+              <div class="card-icon">📊</div>
+              <div class="card-title">Overall Performance</div>
+              <div class="card-subtitle">Complete Cohort Analysis (N=51)</div>
+            </div>
+            <div class="card-content">
+              <div class="stat-grid">
+                <div class="stat-item">
+                  <div class="stat-value">100%</div>
+                  <div class="stat-label">Pass Rate</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-value">175.2</div>
+                  <div class="stat-label">Mean Score</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-value">68.6%</div>
+                  <div class="stat-label">B/A Achievers</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-value">23</div>
+                  <div class="stat-label">Score Range</div>
+                </div>
+              </div>
+              <div class="insight-box">
+                <strong>Strategic Insight:</strong> Exceptional cohort with 100% pass rate and 175.2 average (mid-Grade B). Only 31.4% at marginal pass (Grade C) vs 54.5% in previous cohort—significant improvement! Strong Grade A representation at 15.7% (8 students achieving C1 level).
+              </div>
+            </div>
+            <div class="card-hint">💡 Click to view performance distribution</div>
+          </div>
+          <div class="card-face card-back">
+            <div class="card-header">
+              <div class="card-title">Performance Distribution</div>
+              <div class="card-subtitle">Grade Spread Analysis</div>
+            </div>
+            <div class="card-content">
+              <div class="chart-container">
+                <canvas id="chart1"></canvas>
+              </div>
+            </div>
+            <div class="action-buttons">
+              <button class="action-btn" onclick="showDetail(event, 'detail1-1')">🏆 Top 10 Stars</button>
+              <button class="action-btn" onclick="showDetail(event, 'detail1-2')">⚠️ Support Needed</button>
+              <button class="action-btn" onclick="showDetail(event, 'detail1-3')">📈 Statistical Profile</button>
+              <button class="action-btn" onclick="showDetail(event, 'detail1-4')">💡 Strategic Actions</button>
+            </div>
+            <div id="detail1-1" class="detail-panel">
+              <div class="detail-title">Top 10 Performers - Excellence Exemplified</div>
+              <ul class="detail-list">
+                <li><strong>1. Rita Beatriz Teixeira de Sousa</strong> - 183 (A) - Stellar across all skills</li>
+                <li><strong>2. Afonso Miguel Fernandes Machado</strong> - 182 (A) - Perfect receptive skills (190 each)</li>
+                <li><strong>3. João Manuel Rodrigues de Freitas</strong> - 183 (A) - Balanced excellence</li>
+                <li><strong>4. Eva Camila Rodrigues Dantas</strong> - 181 (A) - Outstanding Use of English (190)</li>
+                <li><strong>5. Maria Pereira da Silva Lobo</strong> - 181 (A) - Consistent high performance</li>
+                <li><strong>6. Inês Sofia Coelho Fernandes</strong> - 180 (A) - Strong productive skills</li>
+                <li><strong>7. Ana Matilde Carvalho Viveiros</strong> - 180 (A) - Excellent listening (190)</li>
+                <li><strong>8. Manuel António dos Santos Franco</strong> - 179 (B) - Top Grade B, C1-level Use of English</li>
+                <li><strong>9. Margarida Oliveira Moura</strong> - 179 (B) - Outstanding receptive skills</li>
+                <li><strong>10. Mariana Lucas da Silva</strong> - 179 (B) - Perfect Use of English (190)</li>
+              </ul>
+            </div>
+            <div id="detail1-2" class="detail-panel">
+              <div class="detail-title">Students Requiring Enhanced Support (Bottom 8)</div>
+              <ul class="detail-list">
+                <li><strong>João Santos Silva</strong> - 160 (C) - Lowest scorer, critical support needed all skills (Reading 150!)</li>
+                <li><strong>Margarida Soares Martins</strong> - 165 (C) - Weak Reading (161) and Use of English (161)</li>
+                <li><strong>Moisés de Câmara Fernandes</strong> - 167 (C) - Consistently low across all four skills</li>
+                <li><strong>Gonçalo Moura Fernandes</strong> - 168 (C) - Lowest Writing (162) in cohort</li>
+                <li><strong>Emanuel José da Silva dos Santos</strong> - 169 (C) - Reading struggle (165)</li>
+                <li><strong>Luísa Sofia de Freitas António Sousa Rocha</strong> - 170 (C) - Weakest Reading (163)</li>
+                <li><strong>Madalena Fortes de Sousa</strong> - 170 (C) - Use of English & Writing gaps</li>
+                <li><strong>Martim de Albuquerque Coimbra Fernandes</strong> - 171 (C) - Grammar focus needed (UoE 166)</li>
+              </ul>
+            </div>
+            <div id="detail1-3" class="detail-panel">
+              <div class="detail-title">Comprehensive Statistical Profile</div>
+              <ul class="detail-list">
+                <li><strong>N (Sample Size):</strong> 51 students</li>
+                <li><strong>Mean:</strong> 175.2 (solid mid-Grade B performance)</li>
+                <li><strong>Median:</strong> 176 (balanced distribution)</li>
+                <li><strong>Mode:</strong> 176, 179 (most frequent scores)</li>
+                <li><strong>Standard Deviation:</strong> 5.8 (moderate variability, more spread than previous cohort)</li>
+                <li><strong>Range:</strong> 160-183 (23-point spread)</li>
+                <li><strong>Percentiles:</strong> 25th=171, 50th=176, 75th=179</li>
+                <li><strong>Skewness:</strong> Slight negative skew (more high scorers)</li>
+              </ul>
+            </div>
+            <div id="detail1-4" class="detail-panel">
+              <div class="detail-title">Strategic Recommendations - Priority Actions</div>
+              <ul class="detail-list">
+                <li><strong>Priority 1:</strong> Intensive support for 8 lowest scorers (160-171) - personalized learning plans</li>
+                <li><strong>Priority 2:</strong> Grade C → B elevation program for 16 students (strategic 6-12 point gains possible)</li>
+                <li><strong>Priority 3:</strong> Advanced enrichment for 8 Grade A students - maintain C1 trajectory</li>
+                <li><strong>Priority 4:</strong> Peer mentoring system - Grade A students support Grade C learners</li>
+                <li><strong>Priority 5:</strong> Celebrate success - 68.6% at B or higher is exceptional!</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Skills Breakdown -->
+      <div class="card-wrapper">
+        <div class="card" id="card2" onclick="flipCard('card2')">
+          <div class="card-face card-front">
+            <div class="card-header">
+              <div class="card-icon">🎯</div>
+              <div class="card-title">Skills Breakdown</div>
+              <div class="card-subtitle">Four Skills Comparative Analysis</div>
+            </div>
+            <div class="card-content">
+              <div class="stat-grid">
+                <div class="stat-item">
+                  <div class="stat-value">177.8</div>
+                  <div class="stat-label">Reading Avg</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-value">177.5</div>
+                  <div class="stat-label">Listening Avg</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-value">175.4</div>
+                  <div class="stat-label">Use of Eng Avg</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-value">169.5</div>
+                  <div class="stat-label">Writing Avg</div>
+                </div>
+              </div>
+              <div class="insight-box">
+                <strong>Critical Discovery:</strong> Clear skills hierarchy - Reading strongest (177.8), Writing weakest (169.5). 8.3-point gap reveals systematic output deficiency. Speaking at 173.4 shows moderate productive skill development. Pattern confirms: comprehension > production.
+              </div>
+            </div>
+            <div class="card-hint">💡 Click to view detailed skills analysis</div>
+          </div>
+          <div class="card-face card-back">
+            <div class="card-header">
+              <div class="card-title">Skills Performance Graph</div>
+              <div class="card-subtitle">Average Scores by Skill</div>
+            </div>
+            <div class="card-content">
+              <div class="chart-container">
+                <canvas id="chart2"></canvas>
+              </div>
+            </div>
+            <div class="action-buttons">
+              <button class="action-btn" onclick="showDetail(event, 'detail2-1')">📚 Reading Deep Dive</button>
+              <button class="action-btn" onclick="showDetail(event, 'detail2-2')">🎧 Listening Insights</button>
+              <button class="action-btn" onclick="showDetail(event, 'detail2-3')">✍️ Writing Crisis</button>
+              <button class="action-btn" onclick="showDetail(event, 'detail2-4')">🗣️ Speaking Profile</button>
+            </div>
+            <div id="detail2-1" class="detail-panel">
+              <div class="detail-title">Reading Performance (Avg: 177.8) ⭐</div>
+              <ul class="detail-list">
+                <li><strong>Status:</strong> STRONGEST skill overall - impressive cohort strength</li>
+                <li><strong>C1 Achievers:</strong> 14 students scored 180+ (27.5% at C1 level for reading)</li>
+                <li><strong>Perfect Scores:</strong> 6 students achieved 190 (maximum receptive excellence)</li>
+                <li><strong>Concern Zone:</strong> 5 students below 170 need intensive reading support</li>
+                <li><strong>Strategy:</strong> Maintain excellence through extensive reading, diverse genres, timed practice</li>
+              </ul>
+            </div>
+            <div id="detail2-2" class="detail-panel">
+              <div class="detail-title">Listening Performance (Avg: 177.5) ⭐</div>
+              <ul class="detail-list">
+                <li><strong>Status:</strong> Second-best skill - excellent aural comprehension</li>
+                <li><strong>C1 Achievers:</strong> 16 students scored 180+ (31.4% at C1 listening level)</li>
+                <li><strong>Range:</strong> 157-190 (33-point spread - some struggle)</li>
+                <li><strong>Consistency:</strong> 35 students (68.6%) scored 173+ (solid B2+ listening)</li>
+                <li><strong>Strategy:</strong> Continue varied audio exposure, focus on bottom 10 students with targeted practice</li>
+              </ul>
+            </div>
+            <div id="detail2-3" class="detail-panel">
+              <div class="detail-title">Writing Performance (Avg: 169.5) ⚠️ CRITICAL</div>
+              <ul class="detail-list">
+                <li><strong>CRISIS ALERT:</strong> WEAKEST skill by 8.3 points - URGENT intervention required</li>
+                <li><strong>Only 9 students</strong> (17.6%) reached C1 level (180+) in writing</li>
+                <li><strong>Grade C Cluster:</strong> 24 students (47%) scored 164-171 (borderline competence)</li>
+                <li><strong>Below 160:</strong> 2 students critically weak (João Santos 155, Maria Judith 151!)</li>
+                <li><strong>STRATEGIC IMPERATIVE:</strong> Double writing instruction time, implement process writing, weekly feedback cycles, model answer analysis, peer review systems</li>
+              </ul>
+            </div>
+            <div id="detail2-4" class="detail-panel">
+              <div class="detail-title">Speaking Performance (Avg: 173.4)</div>
+              <ul class="detail-list">
+                <li><strong>Status:</strong> Second-weakest skill but showing promise</li>
+                <li><strong>C1 Speakers:</strong> 10 students scored 180+ (19.6% at advanced oral proficiency)</li>
+                <li><strong>Range:</strong> 166-186 (20-point spread, less variability than writing)</li>
+                <li><strong>Median:</strong> 173 (consistent mid-Grade B speaking ability)</li>
+                <li><strong>Strategy:</strong> Increase speaking opportunities, conversation clubs, fluency activities, paired practice</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Productive vs Receptive -->
+      <div class="card-wrapper">
+        <div class="card" id="card3" onclick="flipCard('card3')">
+          <div class="card-face card-front">
+            <div class="card-header">
+              <div class="card-icon">⚖️</div>
+              <div class="card-title">Productive vs Receptive</div>
+              <div class="card-subtitle">Output vs Input Skills Gap Analysis</div>
+            </div>
+            <div class="card-content">
+              <div class="stat-grid">
+                <div class="stat-item">
+                  <div class="stat-value">177.7</div>
+                  <div class="stat-label">Receptive Avg</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-value">171.5</div>
+                  <div class="stat-label">Productive Avg</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-value">-6.2</div>
+                  <div class="stat-label">Gap (Prod-Recep)</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-value">3.5%</div>
+                  <div class="stat-label">Performance Deficit</div>
+                </div>
+              </div>
+              <div class="insight-box">
+                <strong>SLA Theory Application:</strong> Classic intake-output asymmetry observed. 6.2-point receptive advantage (3.5% deficit) indicates systemic underproduction. Students comprehend significantly better than they produce - typical interlanguage pattern requiring intensive output practice.
+              </div>
+            </div>
+            <div class="card-hint">💡 Click for pedagogical analysis</div>
+          </div>
+          <div class="card-face card-back">
+            <div class="card-header">
+              <div class="card-title">Skills Dichotomy Analysis</div>
+              <div class="card-subtitle">Comprehensive Input-Output Study</div>
+            </div>
+            <div class="card-content">
+              <div class="chart-container">
+                <canvas id="chart3"></canvas>
+              </div>
+            </div>
+            <div class="action-buttons">
+              <button class="action-btn" onclick="showDetail(event, 'detail3-1')">📥 Receptive Excellence</button>
+              <button class="action-btn" onclick="showDetail(event, 'detail3-2')">📤 Productive Lag</button>
+              <button class="action-btn" onclick="showDetail(event, 'detail3-3')">⚡ Gap Implications</button>
+              <button class="action-btn" onclick="showDetail(event, 'detail3-4')">🎓 Bridging Strategy</button>
+            </div>
+            <div id="detail3-1" class="detail-panel">
+              <div class="detail-title">Receptive Skills (Reading + Listening) - Cohort Strength</div>
+              <ul class="detail-list">
+                <li><strong>Average:</strong> 177.7 - Exceptional comprehension (approaching C1 threshold)</li>
+                <li><strong>Reading:</strong> 177.8 (strongest individual skill)</li>
+                <li><strong>Listening:</strong> 177.5 (consistent excellence)</li>
+                <li><strong>C1 Achievement:</strong> 30 students (58.8%) scored 180+ in at least one receptive skill</li>
+                <li><strong>Interpretation:</strong> Superior input processing - excellent comprehension foundation established</li>
+              </ul>
+            </div>
+            <div id="detail3-2" class="detail-panel">
+              <div class="detail-title">Productive Skills (Writing + Speaking) - Development Zone</div>
+              <ul class="detail-list">
+                <li><strong>Average:</strong> 171.5 - Significantly lower (6.2-point deficit from receptive)</li>
+                <li><strong>Writing:</strong> 169.5 (major weakness - 8.3 points below reading!)</li>
+                <li><strong>Speaking:</strong> 173.4 (moderate performance, 4.1 points below listening)</li>
+                <li><strong>C1 Achievement:</strong> Only 12 students (23.5%) scored 180+ in a productive skill</li>
+                <li><strong>Critical Finding:</strong> Clear ability to understand ≠ ability to produce at same level</li>
+              </ul>
+            </div>
+            <div id="detail3-3" class="detail-panel">
+              <div class="detail-title">Pedagogical Implications - Why This Matters</div>
+              <ul class="detail-list">
+                <li><strong>Gap Size:</strong> 6.2 points (3.5%) - pedagogically significant, demands intervention</li>
+                <li><strong>SLA Theory:</strong> Confirms Krashen's comprehension-before-production hypothesis</li>
+                <li><strong>Interlanguage:</strong> Learners have fossilized receptive > productive imbalance</li>
+                <li><strong>Student Impact:</strong> 38 students (74.5%) show 5+ point receptive advantage</li>
+                <li><strong>Worst Cases:</strong> 7 students have 10+ point gaps (extreme comprehension-production split)</li>
+              </ul>
+            </div>
+            <div id="detail3-4" class="detail-panel">
+              <div class="detail-title">Evidence-Based Bridging Strategies</div>
+              <ul class="detail-list">
+                <li><strong>Output Hypothesis (Swain):</strong> Force production at comprehension level through pushed output tasks</li>
+                <li><strong>Time Reallocation:</strong> Shift from 65/35 to 45/55 receptive/productive ratio immediately</li>
+                <li><strong>Task-Based Learning:</strong> Replace PPP with authentic communication tasks requiring output</li>
+                <li><strong>Flipped Classroom:</strong> Receptive work at home, productive work in class (maximize output time)</li>
+                <li><strong>Noticing Activities:</strong> Consciousness-raising tasks to bridge declarative→procedural knowledge</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Use of English Deep Dive -->
+      <div class="card-wrapper">
+        <div class="card" id="card4" onclick="flipCard('card4')">
+          <div class="card-face card-front">
+            <div class="card-header">
+              <div class="card-icon">📖</div>
+              <div class="card-title">Use of English</div>
+              <div class="card-subtitle">Grammar & Vocabulary Competence</div>
+            </div>
+            <div class="card-content">
+              <div class="stat-grid">
+                <div class="stat-item">
+                  <div class="stat-value">175.4</div>
+                  <div class="stat-label">UoE Average</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-value">151-190</div>
+                  <div class="stat-label">Score Range</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-value">11</div>
+                  <div class="stat-label">C1 Level (180+)</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-value">21.6%</div>
+                  <div class="stat-label">C1 Achievers</div>
+                </div>
+              </div>
+              <div class="insight-box">
+                <strong>Grammar Diagnostic:</strong> UoE at 175.4 bridges receptive (177.7) and productive (171.5), confirming that grammatical knowledge exists but isn't fully activated in production. Gap suggests form-meaning-use integration deficit.
+              </div>
+            </div>
+            <div class="card-hint">💡 Click for grammar analysis</div>
+          </div>
+          <div class="card-face card-back">
+            <div class="card-header">
+              <div class="card-title">Use of English Distribution</div>
+              <div class="card-subtitle">Grammatical Competence Profile</div>
+            </div>
+            <div class="card-content">
+              <div class="chart-container">
+                <canvas id="chart4"></canvas>
+              </div>
+            </div>
+            <div class="action-buttons">
+              <button class="action-btn" onclick="showDetail(event, 'detail4-1')">⭐ Grammar Masters</button>
+              <button class="action-btn" onclick="showDetail(event, 'detail4-2')">📉 Grammar Gaps</button>
+              <button class="action-btn" onclick="showDetail(event, 'detail4-3')">🔍 Error Patterns</button>
+              <button class="action-btn" onclick="showDetail(event, 'detail4-4')">💪 Intervention Plan</button>
+            </div>
+            <div id="detail4-1" class="detail-panel">
+              <div class="detail-title">Use of English Champions (Top 10)</div>
+              <ul class="detail-list">
+                <li><strong>1. Afonso Miguel Fernandes Machado</strong> - 190 (Perfect UoE score!)</li>
+                <li><strong>1. Eva Camila Rodrigues Dantas</strong> - 190 (Perfect UoE score!)</li>
+                <li><strong>1. Maria Judith Rodrigues Pascoal</strong> - 188 (Near-perfect)</li>
+                <li><strong>4. Afonso Wang</strong> - 188 (Excellent form control)</li>
+                <li><strong>4. João Diogo Gomes Ribeiro</strong> - 184 (Strong analytical abilities)</li>
+                <li><strong>6. Ana Matilde Carvalho Viveiros</strong> - 184 (Consistent grammar mastery)</li>
+                <li><strong>7. Mariana Lucas da Silva</strong> - 190 (Perfect grammar knowledge)</li>
+                <li><strong>8. Rita Beatriz Teixeira</strong> - 190 (Complete form mastery)</li>
+              </ul>
+            </div>
+            <div id="detail4-2" class="detail-panel">
+              <div class="detail-title">Students Needing Grammar Support (Bottom 10)</div>
+              <ul class="detail-list">
+                <li><strong>Maria Judith Rodrigues Pascoal</strong> - 151 (Critically low - systematic intervention needed)</li>
+                <li><strong>Margarida Soares Martins</strong> - 161 (Fundamental grammar gaps)</li>
+                <li><strong>Afonso Wang</strong> - 164 (Below Grade B threshold)</li>
+                <li><strong>Emanuel José da Silva</strong> - 164 (Form-function disconnect)</li>
+                <li><strong>Luísa Sofia de Freitas</strong> - 162 (Structural weaknesses)</li>
+                <li><strong>Gonçalo Moura Fernandes</strong> - 164 (Consistent low performance)</li>
+                <li><strong>Martim de Albuquerque</strong> - 166 (Approaching borderline)</li>
+                <li><strong>João Santos Silva</strong> - 166 (Below competency threshold)</li>
+              </ul>
+            </div>
+            <div id="detail4-3" class="detail-panel">
+              <div class="detail-title">Probable Error Patterns (Hypothesis)</div>
+              <ul class="detail-list">
+                <li><strong>Part 1 (Multiple Choice):</strong> Likely collocation errors, phrasal verb confusion</li>
+                <li><strong>Part 2 (Open Cloze):</strong> Probably articles, prepositions, grammatical morphemes</li>
+                <li><strong>Part 3 (Word Formation):</strong> Derivational morphology issues (prefixes/suffixes)</li>
+                <li><strong>Part 4 (Key Word Transformations):</strong> Complex structures, passive voice, reported speech</li>
+                <li><strong>Overall Pattern:</strong> Lexicogrammatical interface weakest area (collocations, chunks)</li>
+                <li><strong>Recommendation:</strong> Conduct error analysis on actual papers to confirm hypotheses</li>
+              </ul>
+            </div>
+            <div id="detail4-4" class="detail-panel">
+              <div class="detail-title">Systematic Grammar Intervention</div>
+              <ul class="detail-list">
+                <li><strong>Diagnostic Phase:</strong> Individual grammar audits for bottom 15 students</li>
+                <li><strong>Consciousness-Raising:</strong> Noticing activities before explicit instruction</li>
+                <li><strong>Input Enhancement:</strong> Typographical cues to highlight target structures</li>
+                <li><strong>Focused Practice:</strong> Communicative tasks requiring specific grammatical forms</li>
+                <li><strong>Corrective Feedback:</strong> Recasts and prompts during output activities</li>
+                <li><strong>Collocation Training:</strong> Intensive phraseology work (chunks over rules)</li>
+                <li><strong>Test-Teach-Test Cycle:</strong> Assess → Instruct → Reassess for each structure</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background: rgba(28, 28, 30, 0.85); backdrop-filter: blur(40px); padding: 2rem; border-radius: 1.5rem; border: 1.5px solid rgba(201, 169, 97, 0.25); margin-top: 5rem; clear: both; position: relative; z-index: 10;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; color: #C9A961; margin: 0; text-align: center; flex: 1;">EXECUTIVE SUMMARY: STRATEGIC RECOMMENDATIONS</h2>
+        <button id="toggleSummaryBtn" class="toggle-summary-btn" onclick="toggleExecutiveSummary()">
+          EXPAND ▼
+        </button>
+      </div>
+      
+      <div id="executiveSummaryContent" style="transition: all 0.3s ease; display: none;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+        <div style="background: rgba(201, 169, 97, 0.08); border-left: 3px solid #C9A961; padding: 1.5rem; border-radius: 0.75rem;">
+          <h3 style="color: #C9A961; font-size: 1rem; margin-bottom: 0.75rem; text-transform: uppercase;">🎯 Priority 1: Writing Emergency</h3>
+          <p style="font-size: 0.85rem; line-height: 1.6; color: #e5e5e7;">Writing at 169.5 (weakest by 8.3 points) is a CRISIS. Immediate action: triple writing workshop frequency, implement process writing methodology, structured peer feedback every week, model answer deconstruction, genre-based instruction. Target: +6 points in 3 months.</p>
+        </div>
+        
+        <div style="background: rgba(201, 169, 97, 0.08); border-left: 3px solid #C9A961; padding: 1.5rem; border-radius: 0.75rem;">
+          <h3 style="color: #C9A961; font-size: 1rem; margin-bottom: 0.75rem; text-transform: uppercase;">⚖️ Priority 2: Close Output Gap</h3>
+          <p style="font-size: 0.85rem; line-height: 1.6; color: #e5e5e7;">6.2-point receptive-productive gap (3.5% deficit) demands restructuring. Shift from 65/35 to 45/55 input/output time allocation. Implement task-based learning, pushed output activities, flipped classroom model. Apply Swain's Output Hypothesis principles.</p>
+        </div>
+        
+        <div style="background: rgba(201, 169, 97, 0.08); border-left: 3px solid #C9A961; padding: 1.5rem; border-radius: 0.75rem;">
+          <h3 style="color: #C9A961; font-size: 1rem; margin-bottom: 0.75rem; text-transform: uppercase;">📚 Priority 3: Targeted Support</h3>
+          <p style="font-size: 0.85rem; line-height: 1.6; color: #e5e5e7;">Bottom 8 students (160-171) need intensive personalized intervention. Create Individual Learning Plans, weekly one-on-one sessions, diagnostic grammar audits, skill-specific remediation. These 8 represent 15.7% of cohort - manageable for focused support.</p>
+        </div>
+        
+        <div style="background: rgba(201, 169, 97, 0.08); border-left: 3px solid #C9A961; padding: 1.5rem; border-radius: 0.75rem;">
+          <h3 style="color: #C9A961; font-size: 1rem; margin-bottom: 0.75rem; text-transform: uppercase;">🔤 Priority 4: Grammar Activation</h3>
+          <p style="font-size: 0.85rem; line-height: 1.6; color: #e5e5e7;">UoE at 175.4 (between receptive & productive) shows declarative knowledge exists but isn't proceduralized. Focus on form-meaning-use integration, consciousness-raising tasks, collocations over rules, meaningful output requiring target structures.</p>
+        </div>
+        
+        <div style="background: rgba(201, 169, 97, 0.08); border-left: 3px solid #C9A961; padding: 1.5rem; border-radius: 0.75rem;">
+          <h3 style="color: #C9A961; font-size: 1rem; margin-bottom: 0.75rem; text-transform: uppercase;">👥 Priority 5: Peer Mentoring</h3>
+          <p style="font-size: 0.85rem; line-height: 1.6; color: #e5e5e7;">Leverage 8 Grade A students (183-180) and top 10 Grade B students (179-178) as peer mentors for Grade C learners. Social learning accelerates acquisition, builds community, provides authentic communication practice. Formal mentoring program with structure.</p>
+        </div>
+        
+        <div style="background: rgba(201, 169, 97, 0.08); border-left: 3px solid #C9A961; padding: 1.5rem; border-radius: 0.75rem;">
+          <h3 style="color: #C9A961; font-size: 1rem; margin-bottom: 0.75rem; text-transform: uppercase;">🌟 Priority 6: Celebrate Success</h3>
+          <p style="font-size: 0.85rem; line-height: 1.6; color: #e5e5e7;">100% pass rate with 175.2 average and 68.6% at Grade B or higher is EXCEPTIONAL! Only 31.4% at Grade C vs 54.5% in June 14 cohort = major improvement. Acknowledge this achievement while addressing growth areas. Staff excellence evident in results.</p>
+        </div>
+      </div>
+
+      <div style="margin-top: 2rem; padding: 1.5rem; background: rgba(201, 169, 97, 0.06); border-radius: 0.75rem; border: 1px solid rgba(201, 169, 97, 0.2);">
+        <h3 style="color: #C9A961; font-size: 1.1rem; margin-bottom: 1rem; text-transform: uppercase; text-align: center;">📊 Cohort Comparison: June 14 vs June 28</h3>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center; font-size: 0.85rem;">
+          <div>
+            <strong style="color: #C9A961;">June 14 (N=11)</strong><br>
+            Avg: 172.9<br>
+            Grade C: 54.5%
+          </div>
+          <div style="color: #C9A961; font-weight: 700;">
+            →→→
+          </div>
+          <div>
+            <strong style="color: #C9A961;">June 28 (N=40)</strong><br>
+            Avg: 175.8<br>
+            Grade C: 25% ✨
+          </div>
+        </div>
+        <p style="margin-top: 1rem; text-align: center; color: #e5e5e7; font-size: 0.9rem;"><strong>Significant Improvement:</strong> Second cohort shows 2.9-point gain and 29.5% reduction in marginal passes. Teaching methodology clearly effective - maintain current approach while addressing identified gaps.</p>
+      </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const allStudents = [
+      // June 14, 2025 Session (11 students)
+      {name: "Madalena Nunes Cunha", score: 184, grade: "A", reading: 190, use: 180, writing: 182, listening: 181, speaking: 185, session: "14-Jun"},
+      {name: "Diogo Afonso Pestana Torais", score: 179, grade: "B", reading: 180, use: 190, writing: 166, listening: 184, speaking: 174, session: "14-Jun"},
+      {name: "Matilde Nicolau Olival", score: 177, grade: "B", reading: 190, use: 184, writing: 171, listening: 176, speaking: 166, session: "14-Jun"},
+      {name: "Madalena Rosa Fernandes", score: 175, grade: "B", reading: 174, use: 188, writing: 171, listening: 173, speaking: 171, session: "14-Jun"},
+      {name: "Madalena Maria Vieira Alves", score: 173, grade: "B", reading: 176, use: 176, writing: 171, listening: 176, speaking: 167, session: "14-Jun"},
+      {name: "Luis Miguel Gomes Quadrado", score: 173, grade: "B", reading: 174, use: 173, writing: 168, listening: 171, speaking: 178, session: "14-Jun"},
+      {name: "Marina Nikulina", score: 172, grade: "C", reading: 165, use: 173, writing: 168, listening: 167, speaking: 185, session: "14-Jun"},
+      {name: "Maria Clara Saldanha", score: 171, grade: "C", reading: 176, use: 164, writing: 168, listening: 176, speaking: 170, session: "14-Jun"},
+      {name: "Afonso Zou Du", score: 170, grade: "C", reading: 167, use: 173, writing: 166, listening: 181, speaking: 165, session: "14-Jun"},
+      {name: "Isabel Ornelas Canada", score: 169, grade: "C", reading: 167, use: 164, writing: 166, listening: 173, speaking: 175, session: "14-Jun"},
+      {name: "Margarida Rodrigues Félix", score: 165, grade: "C", reading: 159, use: 164, writing: 171, listening: 165, speaking: 166, session: "14-Jun"},
+      
+      // June 28, 2025 Session (40 students)
+      {name: "Rita Beatriz Teixeira de Sousa", score: 183, grade: "A", reading: 188, use: 190, writing: 177, listening: 182, speaking: 177, session: "28-Jun"},
+      {name: "João Manuel Rodrigues de Freitas", score: 183, grade: "A", reading: 188, use: 188, writing: 175, listening: 190, speaking: 175, session: "28-Jun"},
+      {name: "Afonso Miguel Fernandes Machado", score: 182, grade: "A", reading: 178, use: 190, writing: 166, listening: 190, speaking: 185, session: "28-Jun"},
+      {name: "Eva Camila Rodrigues Dantas", score: 181, grade: "A", reading: 188, use: 190, writing: 180, listening: 175, speaking: 173, session: "28-Jun"},
+      {name: "Maria Pereira da Silva Lobo", score: 181, grade: "A", reading: 188, use: 188, writing: 168, listening: 182, speaking: 177, session: "28-Jun"},
+      {name: "Inês Sofia Coelho Fernandes", score: 180, grade: "A", reading: 190, use: 180, writing: 182, listening: 178, speaking: 171, session: "28-Jun"},
+      {name: "Ana Matilde Carvalho Viveiros", score: 180, grade: "A", reading: 190, use: 184, writing: 164, listening: 190, speaking: 172, session: "28-Jun"},
+      {name: "Manuel António dos Santos Franco", score: 179, grade: "B", reading: 178, use: 190, writing: 171, listening: 182, speaking: 176, session: "28-Jun"},
+      {name: "Margarida Oliveira Moura", score: 179, grade: "B", reading: 188, use: 188, writing: 173, listening: 166, speaking: 180, session: "28-Jun"},
+      {name: "Mariana Lucas da Silva", score: 179, grade: "B", reading: 182, use: 190, writing: 171, listening: 175, speaking: 177, session: "28-Jun"},
+      {name: "Maria Martins Carvalho Rodrigues Lopes", score: 179, grade: "B", reading: 185, use: 188, writing: 168, listening: 182, speaking: 174, session: "28-Jun"},
+      {name: "Clara Dias Santa Clara Costa", score: 179, grade: "B", reading: 178, use: 177, writing: 175, listening: 186, speaking: 180, session: "28-Jun"},
+      {name: "Diogo Jesus Mendonça", score: 178, grade: "B", reading: 188, use: 180, writing: 166, listening: 186, speaking: 172, session: "28-Jun"},
+      {name: "Maria Judith Rodrigues Pascoal", score: 178, grade: "B", reading: 190, use: 188, writing: 151, listening: 186, speaking: 175, session: "28-Jun"},
+      {name: "João Diogo Gomes Ribeiro", score: 178, grade: "B", reading: 178, use: 184, writing: 168, listening: 186, speaking: 174, session: "28-Jun"},
+      {name: "Afonso Wang", score: 178, grade: "B", reading: 171, use: 188, writing: 164, listening: 190, speaking: 175, session: "28-Jun"},
+      {name: "António Manuel Abreu dos Santos", score: 177, grade: "B", reading: 190, use: 177, writing: 166, listening: 186, speaking: 168, session: "28-Jun"},
+      {name: "Bernardo Quaresma Azevedo Santos", score: 176, grade: "B", reading: 190, use: 188, writing: 166, listening: 166, speaking: 171, session: "28-Jun"},
+      {name: "Miguel Jorge dos Santos Franco", score: 176, grade: "B", reading: 178, use: 174, writing: 175, listening: 182, speaking: 172, session: "28-Jun"},
+      {name: "Mateus José Freitas Andrade", score: 176, grade: "B", reading: 178, use: 190, writing: 166, listening: 175, speaking: 173, session: "28-Jun"},
+      {name: "Nicole Rodrigues Dias", score: 176, grade: "B", reading: 185, use: 171, writing: 166, listening: 182, speaking: 174, session: "28-Jun"},
+      {name: "Leonor de Sousa Pereira Morgado", score: 176, grade: "B", reading: 178, use: 171, writing: 166, listening: 178, speaking: 186, session: "28-Jun"},
+      {name: "Jakub Aleksander Szukalski", score: 176, grade: "B", reading: 176, use: 184, writing: 164, listening: 182, speaking: 173, session: "28-Jun"},
+      {name: "Maria Carolina Ferreira Armas", score: 175, grade: "B", reading: 168, use: 180, writing: 162, listening: 182, speaking: 181, session: "28-Jun"},
+      {name: "Mariana Vieira do Rosário", score: 175, grade: "B", reading: 174, use: 190, writing: 168, listening: 175, speaking: 170, session: "28-Jun"},
+      {name: "Bernardo Vieira Cortez", score: 174, grade: "B", reading: 169, use: 184, writing: 164, listening: 182, speaking: 172, session: "28-Jun"},
+      {name: "Elói Henriques Alves dos Santos", score: 174, grade: "B", reading: 180, use: 177, writing: 164, listening: 182, speaking: 168, session: "28-Jun"},
+      {name: "Ana Beatriz Figueira Andrade", score: 173, grade: "B", reading: 178, use: 174, writing: 171, listening: 172, speaking: 168, session: "28-Jun"},
+      {name: "Diana Maria Rodrigues Vieira", score: 173, grade: "B", reading: 171, use: 184, writing: 166, listening: 170, speaking: 176, session: "28-Jun"},
+      {name: "João Francisco Pereira Caldeira", score: 173, grade: "B", reading: 176, use: 171, writing: 166, listening: 186, speaking: 168, session: "28-Jun"},
+      {name: "Mariana Brito Figueiroa Clode", score: 172, grade: "C", reading: 163, use: 177, writing: 171, listening: 178, speaking: 172, session: "28-Jun"},
+      {name: "Martim de Albuquerque Coimbra", score: 171, grade: "C", reading: 169, use: 166, writing: 171, listening: 175, speaking: 172, session: "28-Jun"},
+      {name: "Joana Ornelas Silva", score: 171, grade: "C", reading: 169, use: 171, writing: 164, listening: 172, speaking: 180, session: "28-Jun"},
+      {name: "Luísa Sofia de Freitas António", score: 170, grade: "C", reading: 163, use: 180, writing: 162, listening: 175, speaking: 170, session: "28-Jun"},
+      {name: "Madalena Fortes de Sousa", score: 170, grade: "C", reading: 171, use: 169, writing: 164, listening: 170, speaking: 174, session: "28-Jun"},
+      {name: "Emanuel José da Silva dos Santos", score: 169, grade: "C", reading: 165, use: 171, writing: 164, listening: 175, speaking: 168, session: "28-Jun"},
+      {name: "Gonçalo Moura Fernandes", score: 168, grade: "C", reading: 169, use: 164, writing: 162, listening: 168, speaking: 176, session: "28-Jun"},
+      {name: "Moisés de Câmara Fernandes", score: 167, grade: "C", reading: 169, use: 169, writing: 166, listening: 166, speaking: 166, session: "28-Jun"},
+      {name: "Margarida Soares Martins", score: 165, grade: "C", reading: 161, use: 161, writing: 166, listening: 172, speaking: 167, session: "28-Jun"},
+      {name: "João Santos Silva", score: 160, grade: "C", reading: 150, use: 166, writing: 155, listening: 157, speaking: 172, session: "28-Jun"}
+    ];
+
+    function flipCard(cardId) {
+      const card = document.getElementById(cardId);
+      card.classList.toggle('flipped');
+    }
+
+    function showDetail(event, detailId) {
+      event.stopPropagation();
+      const panel = document.getElementById(detailId);
+      const allPanels = panel.parentElement.parentElement.querySelectorAll('.detail-panel');
+      allPanels.forEach(p => {
+        if (p.id === detailId) {
+          p.classList.toggle('active');
+        } else {
+          p.classList.remove('active');
+        }
+      });
+    }
+
+    function toggleExecutiveSummary() {
+      const content = document.getElementById('executiveSummaryContent');
+      const btn = document.getElementById('toggleSummaryBtn');
+      
+      if (content.style.display === 'none') {
+        content.style.display = 'block';
+        btn.innerHTML = 'COLLAPSE ▲';
+      } else {
+        content.style.display = 'none';
+        btn.innerHTML = 'EXPAND ▼';
+      }
+    }
+
+    // Chart 1: Overall Performance Distribution
+    const ctx1 = document.getElementById('chart1').getContext('2d');
+    const gradeA = allStudents.filter(s => s.grade === 'A').length;
+    const gradeB = allStudents.filter(s => s.grade === 'B').length;
+    const gradeC = allStudents.filter(s => s.grade === 'C').length;
+
+    new Chart(ctx1, {
+      type: 'doughnut',
+      data: {
+        labels: ['Grade A (C1) - 8 students', 'Grade B (B2+) - 27 students', 'Grade C (B2) - 16 students'],
+        datasets: [{
+          data: [gradeA, gradeB, gradeC],
+          backgroundColor: ['#C9A961', 'rgba(201, 169, 97, 0.6)', 'rgba(201, 169, 97, 0.3)'],
+          borderColor: ['#C9A961', 'rgba(201, 169, 97, 0.8)', 'rgba(201, 169, 97, 0.5)'],
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: '#e5e5e7',
+              font: { size: 11, family: 'DM Sans' },
+              padding: 12
+            }
+          },
+          title: {
+            display: true,
+            text: 'Grade Distribution (N=51)',
+            color: '#C9A961',
+            font: { size: 16, weight: 'bold', family: 'Space Grotesk' }
+          }
+        }
+      }
+    });
+
+    // Chart 2: Skills Breakdown
+    const ctx2 = document.getElementById('chart2').getContext('2d');
+    const avgReading = allStudents.reduce((sum, s) => sum + s.reading, 0) / allStudents.length;
+    const avgUse = allStudents.reduce((sum, s) => sum + s.use, 0) / allStudents.length;
+    const avgWriting = allStudents.reduce((sum, s) => sum + s.writing, 0) / allStudents.length;
+    const avgListening = allStudents.reduce((sum, s) => sum + s.listening, 0) / allStudents.length;
+    const avgSpeaking = allStudents.reduce((sum, s) => sum + s.speaking, 0) / allStudents.length;
+
+    new Chart(ctx2, {
+      type: 'bar',
+      data: {
+        labels: ['Reading', 'Use of English', 'Writing', 'Listening', 'Speaking'],
+        datasets: [{
+          label: 'Average Score',
+          data: [avgReading, avgUse, avgWriting, avgListening, avgSpeaking],
+          backgroundColor: 'rgba(201, 169, 97, 0.6)',
+          borderColor: '#C9A961',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: false,
+            min: 165,
+            max: 180,
+            ticks: { color: '#8e8e93', font: { family: 'DM Sans' } },
+            grid: { color: 'rgba(201, 169, 97, 0.1)' }
+          },
+          x: {
+            ticks: { color: '#e5e5e7', font: { family: 'DM Sans', size: 10 } },
+            grid: { display: false }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          title: {
+            display: true,
+            text: 'Skills Performance Comparison',
+            color: '#C9A961',
+            font: { size: 16, weight: 'bold', family: 'Space Grotesk' }
+          }
+        }
+      }
+    });
+
+    // Chart 3: Productive vs Receptive
+    const ctx3 = document.getElementById('chart3').getContext('2d');
+    const avgReceptive = (avgReading + avgListening) / 2;
+    const avgProductive = (avgWriting + avgSpeaking) / 2;
+
+    new Chart(ctx3, {
+      type: 'bar',
+      data: {
+        labels: ['Receptive Skills\n(Reading + Listening)', 'Productive Skills\n(Writing + Speaking)'],
+        datasets: [{
+          label: 'Average Score',
+          data: [avgReceptive, avgProductive],
+          backgroundColor: ['rgba(201, 169, 97, 0.8)', 'rgba(201, 169, 97, 0.4)'],
+          borderColor: ['#C9A961', 'rgba(201, 169, 97, 0.6)'],
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: false,
+            min: 168,
+            max: 180,
+            ticks: { color: '#8e8e93', font: { family: 'DM Sans' } },
+            grid: { color: 'rgba(201, 169, 97, 0.1)' }
+          },
+          x: {
+            ticks: { color: '#e5e5e7', font: { family: 'DM Sans', size: 11 } },
+            grid: { display: false }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          title: {
+            display: true,
+            text: 'Receptive vs Productive Skills Gap: 6.2 points',
+            color: '#C9A961',
+            font: { size: 16, weight: 'bold', family: 'Space Grotesk' }
+          }
+        }
+      }
+    });
+
+    // Chart 4: Use of English Distribution
+    const ctx4 = document.getElementById('chart4').getContext('2d');
+    const sortedByUoE = [...allStudents].sort((a, b) => b.use - a.use);
+
+    new Chart(ctx4, {
+      type: 'line',
+      data: {
+        labels: sortedByUoE.map((s, i) => `S${i+1}`),
+        datasets: [{
+          label: 'Use of English Score',
+          data: sortedByUoE.map(s => s.use),
+          borderColor: '#C9A961',
+          backgroundColor: 'rgba(201, 169, 97, 0.2)',
+          tension: 0.4,
+          fill: true,
+          pointBackgroundColor: '#C9A961',
+          pointBorderColor: '#0d0d0d',
+          pointBorderWidth: 2,
+          pointRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: false,
+            min: 150,
+            max: 195,
+            ticks: { color: '#8e8e93', font: { family: 'DM Sans' } },
+            grid: { color: 'rgba(201, 169, 97, 0.1)' }
+          },
+          x: {
+            ticks: { color: '#e5e5e7', font: { family: 'DM Sans', size: 9 }, maxRotation: 0 },
+            grid: { display: false }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          title: {
+            display: true,
+            text: 'Use of English: Ranked Distribution (N=51)',
+            color: '#C9A961',
+            font: { size: 16, weight: 'bold', family: 'Space Grotesk' }
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
